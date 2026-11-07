@@ -52,6 +52,8 @@ SHOULDを満たさない挙動や、IdPの外で効く穴は「残るリスク�
 
 判定: 期待が拒否のケースで、受理が1件でもあれば不適合。報告では受理された例を二つに分ける。
 
+redirect URI を登録する機能そのものが無く、どのURLも受理する対象では、登録欄を無視して表の要求だけを送ってテストする。AS-01 は不適合、AS-02 は対象外とする。
+
 - ブラウザ上で登録URLと同じ場所に解決される別表記。大文字、既定ポート、ドットセグメント、クエリ順など。
 - 別ホストや登録範囲外のパスに届くもの。こちらがあれば影響は大きい。
 
@@ -114,7 +116,7 @@ S256のchallengeを付けて取ったcodeを交換する。RFC 7636 §4.6。
 | downgrade | challengeなしで取ったcodeを、verifier付きで交換 | 拒否 |
 | plain_method | `code_challenge_method=plain` で認可と交換 | 記録のみ。受理するならRP-06の事実として書く |
 
-判定: challengeなしの認可を受理し、さらにdowngradeの交換も通れば不適合。public clientとconfidential clientの両方で試す。
+判定: challengeなしの認可を受理し、さらにdowngradeの交換も通れば不適合。public clientとconfidential clientの両方で試す。対象が client の種類を区別しないなら、secret が空の client をテスト内で作って public client とし、作ったことを報告に書く。
 
 ## AS-06: codeの再利用を拒否し、発行済みトークンを失効させる
 
