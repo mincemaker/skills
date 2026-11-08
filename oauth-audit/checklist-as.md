@@ -14,6 +14,8 @@
 
 SHOULDを満たさない挙動や、IdPの外で効く穴は「残るリスク」として書き、判定は変えない。
 
+表のケースは、その項目が守りたいものを確かめる代表例で、すべてを尽くしてはいない。判定は、表のケースの件数ではなく、項目が守りたいものが破れているかで決める。表に無い `extra_` のケースで破れていることを示したら、その項目を不適合とする。
+
 「適合」は記載した確認範囲で項目を満たすという意味で、製品全体の安全性は保証しない。報告の結論にもこの一文を入れる。
 
 ## テストの共通ルール
@@ -49,8 +51,11 @@ SHOULDを満たさない挙動や、IdPの外で効く穴は「残るリスク�
 | query_order | `https://app.example/callback?a=1&b=2` | `https://app.example/callback?b=2&a=1` | 拒否 |
 | query_encoding | `https://app.example/callback?a=A` | `https://app.example/callback?a=%41` | 拒否 |
 | mismatch_stops | | `https://attacker.example/callback` | エラー画面で止まり、要求したURLへ転送しない |
+| mismatch_with_invalid_param | | `https://attacker.example/callback` に、不正な response_type か scope を付ける | エラー画面で止まり、要求したURLへ転送しない |
 
 判定: 期待が拒否のケースで、受理が1件でもあれば不適合。報告では受理された例を二つに分ける。
+
+照合に通っていない redirect_uri は、エラーを返す経路も含めて、どの経路でも転送先にしてはならない。RFC 6749 §4.1.2.1 は、client_id か redirect_uri が無効なら、利用者にエラーを示して転送しないよう求めている。実装が redirect_uri より先にほかのパラメータを調べると、その途中のエラーで、照合する前の redirect_uri へ転送してしまうことがある。code は載らなくても、登録外の URL へのオープンリダイレクトになる。照合しないまま転送する経路が無いかをソースのエラー処理でたどり、見つけたらテストで示す。
 
 redirect URI を登録する機能そのものが無く、どのURLも受理する対象では、登録欄を無視して表の要求だけを送ってテストする。AS-01 は不適合、AS-02 は対象外とする。
 
