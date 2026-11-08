@@ -30,7 +30,8 @@ description: OAuth / OIDCの実装を、oauth-redirect-attacksのチェックリ
 - OAuthの処理や検証を外部ライブラリに任せているなら、その版とSHAも記録する。forkか本家かも確かめる。ネットワークが使えなければ、Goのモジュールキャッシュのような手元の取得済みのソースを作業フォルダへ写して読み、写した元と、そこから分かるSHAを記録する。
 - 対象の役割を決める。認可エンドポイントとトークンエンドポイントを提供するならAS、別のIdPへログインしに行くならRP。上流のIdPを中継するブローカーやプロキシは両方。
 - 該当するチェックリストを全部読む。該当しない方は読まない。
-- `<work>/sources/zenn/` に章のテキストが無ければ、`node <skill>/scripts/fetch-sources.mjs <work>/sources` で取り直す。zenn.dev と openid.net に接続する。取り直せなければ、チェックリストの項目にある攻撃の説明と原文の README で進め、章を読めなかったことを報告に書く。
+- `<work>/sources/zenn/` はスクリプト専用。再取得では、すべての取得後、書き出す前に中身をすべて削除するため、監査テストやメモなどは置かない。
+- `<work>/sources/fetched.txt` が無ければ、取得が済んでいないか途中で失敗している。`node <skill>/scripts/fetch-sources.mjs <work>/sources` で取り直す。zenn.dev と openid.net に接続する。取り直せなければ、チェックリストの項目にある攻撃の説明と原文の README で進め、章を読めなかったことを報告に書く。
 - 作業フォルダの構成は次の形にする。
 
 ```

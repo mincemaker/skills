@@ -10,9 +10,13 @@
 
 Git に入れないものは、書き込み可能な監査用の作業フォルダ `<work>` に取得する。スキルのインストール先には書き込まない。zenn.dev と openid.net に接続する。Zenn からは文書化されていない非公式の API で、章の間に間隔を空けて取得する。
 
+`<work>/sources/zenn/` はスクリプト専用。再取得では、すべての取得後、書き出す前に中身をすべて削除するため、自分のファイルを置かない。
+
 ```sh
 node <skill>/scripts/fetch-sources.mjs <work>/sources
 ```
+
+取得は全部がそろってから書き出し、最後に `<work>/sources/fetched.txt` に取得日とファイルの一覧を書く。このファイルが無ければ取り直す。
 
 RFC は `<skill>/sources/rfc*.txt`、取得した原文は上の保存先から読む。引用には次のようにファイルを指定する。
 

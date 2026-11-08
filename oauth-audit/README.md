@@ -29,7 +29,7 @@ APM でユーザー全体に入れる。
 apm install -g mincemaker/skills/oauth-audit
 ```
 
-プロジェクト単位の APM 設定と `Kyure-A/agent-skills-nix` の Home Manager 設定は、[導入案内](../README.md#導入) を参照。Nix ではこのリポジトリを `flake = false` の input として登録し、`oauth-audit` を選択する。専用の flake やビルド手順は不要。
+プロジェクト単位の APM 設定と `Kyure-A/agent-skills-nix` の Home Manager 設定は、[導入案内](https://github.com/mincemaker/skills#導入) を参照。Nix ではこのリポジトリを `flake = false` の input として登録し、`oauth-audit` を選択する。専用の flake やビルド手順は不要。
 
 ## 必要な環境
 
@@ -83,6 +83,8 @@ Go と Node.js は、APM やスキルの配置だけでは導入されない。H
 
 Hideki Ikeda 氏の [攻撃手法から学ぶ OAuth セキュリティベストプラクティス](https://zenn.dev/hidebike712/books/oauth-attacks-and-bcp) と OpenID Connect Core 1.0 は、転載できないのでこのリポジトリに入れていない。使う人が次のコマンドで手元に取得する。
 
+`<work>/sources/zenn/` はスクリプト専用。再取得では、すべての取得後、書き出す前に中身をすべて削除するため、自分のファイルを置かない。
+
 ```sh
 node <skill>/scripts/fetch-sources.mjs <work>/sources
 node <skill>/scripts/rfc-quote.mjs <skill>/sources/rfc9700.txt "<書き出し>"
@@ -113,7 +115,7 @@ Go のビルドキャッシュには書き込みが必要。sandbox で既定の
 リポジトリのルートから実行する。
 
 ```sh
-node --test oauth-audit/scripts/*.test.mjs
+node --test oauth-audit/scripts/*.test.mjs tests/*.test.mjs
 go -C oauth-audit/tools test ./...
 ```
 

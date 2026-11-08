@@ -18,7 +18,7 @@ test('the skill has valid identifying frontmatter', () => {
 
 test('the standalone skill contains its runtime files', () => {
   for (const path of [
-    'README.md', 'checklist-as.md', 'checklist-rp.md', 'report-template.md',
+    'README.md', 'LICENSE', 'checklist-as.md', 'checklist-rp.md', 'report-template.md',
     'scripts/fetch-sources.mjs', 'scripts/rfc-quote.mjs', 'sources/README.md',
     'sources/rfc6749.txt', 'sources/rfc7636.txt', 'sources/rfc8252.txt',
     'sources/rfc9207.txt', 'sources/rfc9700.txt', 'sources/rfc10017.txt',
