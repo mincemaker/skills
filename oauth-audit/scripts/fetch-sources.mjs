@@ -4,6 +4,7 @@
 //   node <skill>/scripts/fetch-sources.mjs <work>/sources
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
 
 const [output, ...extra] = process.argv.slice(2);
 if (!output || extra.length) {
@@ -11,6 +12,7 @@ if (!output || extra.length) {
   process.exit(1);
 }
 const destination = resolve(output);
+const fetched = `取得日: ${new Date().toISOString().slice(0, 10)}`;
 
 const request = async (url) => {
   const response = await fetch(url);
@@ -27,7 +29,7 @@ const htmlToText = (html) => decode(html
   .replace(/<[^>]+>/g, ''))
   .replace(/\n\s*\n+/g, '\n\n');
 
-// Zenn の本：各章を出力先の zenn/NN-<slug>.txt に
+// Zenn の本：各章を出力先の zenn/NN-<slug>.txt に。文書化されていない非公式の API なので、章の間に間隔を空けて負荷をかけない
 const user = 'hidebike712', slug = 'oauth-attacks-and-bcp';
 const zenn = join(destination, 'zenn');
 // ファイル名に token が入ると、秘密情報を守るフックが読み込みを止めるので短く言い換える
@@ -35,13 +37,14 @@ const rename = (s) => s.replace(/access-token/, 'at').replace(/id-token/, 'idt')
 const { book } = await (await request(`https://zenn.dev/api/books/${slug}?username=${user}`)).json();
 mkdirSync(zenn, { recursive: true });
 for (const [i, c] of book.chapters.entries()) {
+  if (i) await sleep(1000);
   const { chapter } = await (await request(`https://zenn.dev/api/chapters/${c.id}`)).json();
   const name = `${String(i + 1).padStart(2, '0')}-${rename(c.slug)}.txt`;
-  writeFileSync(join(zenn, name), `# ${c.title}\nhttps://zenn.dev/${user}/books/${slug}/viewer/${c.slug}\n\n${htmlToText(chapter.body_html)}`);
+  writeFileSync(join(zenn, name), `# ${c.title}\nhttps://zenn.dev/${user}/books/${slug}/viewer/${c.slug}\n${fetched}\n\n${htmlToText(chapter.body_html)}`);
   console.log(`zenn/${name}`);
 }
 
 // OpenID Connect Core 1.0 incorporating errata set 2
 const oidcUrl = 'https://openid.net/specs/openid-connect-core-1_0.html';
-writeFileSync(join(destination, 'oidc-core-1_0.txt'), `${oidcUrl}\n\n${htmlToText(await (await request(oidcUrl)).text())}`);
+writeFileSync(join(destination, 'oidc-core-1_0.txt'), `${oidcUrl}\n${fetched}\n\n${htmlToText(await (await request(oidcUrl)).text())}`);
 console.log('oidc-core-1_0.txt');

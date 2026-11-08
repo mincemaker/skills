@@ -56,7 +56,7 @@ test('fetch and quote work outside a read-only installation without changing it'
   const result = run('fetch-sources.mjs', ['audit work/sources']);
   assert.equal(result.status, 0, result.stderr);
   const sources = join(workspace, 'audit work', 'sources');
-  assert.match(readFileSync(join(sources, 'zenn', '01-idt-injection.txt'), 'utf8'), /Chapter & source\./);
+  assert.match(readFileSync(join(sources, 'zenn', '01-idt-injection.txt'), 'utf8'), /^取得日: \d{4}-\d{2}-\d{2}$[\s\S]*Chapter & source\./m);
   const oidc = join(sources, 'oidc-core-1_0.txt');
   assert.match(readFileSync(oidc, 'utf8'), /https:\/\/openid.net\//);
   const quote = run('rfc-quote.mjs', [oidc, 'The client MUST']);
