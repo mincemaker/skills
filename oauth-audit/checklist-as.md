@@ -52,7 +52,7 @@
 | mismatch_with_invalid_param | | `https://attacker.example/callback` に、不正な response_type か scope を付ける | エラー画面で止まり、要求したURLへ転送しない。転送したら「照合前の転送」を見る |
 | response_mode_fragment | | 正しい redirect_uri に `response_mode=fragment` を付ける | 記録する。受け付けるか |
 
-判定: 受理した要求で、code がブラウザ上で登録URLと別の場所、つまり別ホストや登録範囲外のパスに届けば不適合。転送先は、ブラウザが実際にたどり着く場所で比べる。
+判定: 受理した要求で、code がブラウザ上で登録URLと別の場所、つまり別ホストや登録範囲外のパスに届けば不適合。転送先は、ブラウザが実際にたどり着く場所で比べる。Location を URL として解析し、ホスト、userinfo、パスを要求と比べる。スキームやホストの大文字と小文字、クエリの順序とエンコードは、AS が書き換えることがあるので、届く先の判断には使わない。
 
 登録URLと同じ場所に解決される別表記、例えば大文字、既定ポート、ドットセグメントで戻る形、クエリの順序やエンコードだけを受理するなら、code は登録外に届かないので不適合にしない。照合が完全一致でないことは、RFC 9700 §2.1 の完全一致の MUST に反するので info に出す。ワイルドカードやパターンを登録すると届く範囲が広がるので、AS-02 で記録した範囲と合わせて残るリスクにも書く。受理したURLを正規化してから転送するのか、要求のまま転送するのかもソースで確かめて書く。
 
@@ -199,7 +199,7 @@ wrong_client では、別の client が自分の正しい認証情報で交換�
 | code_id_token | `code id_token` | 拒否 |
 | code_id_token_token | `code id_token token` | 拒否 |
 
-判定: アクセストークンを返したら、その client の登録で Implicit やハイブリッドを許しているかを確かめる。許していないのに返したら不適合。許しているなら AS の不備ではなく、使わない Implicit を許した登録設定として書く。許していない client を `unauthorized_client` 以外のエラーで拒否するなら、RFC 6749 §4.2.2.1 に沿っていないので info に出す。
+判定: アクセストークンを返したら、その client の登録で Implicit やハイブリッドを許しているかを確かめる。許していないのに返したら不適合。許しているなら AS の不備ではなく、使わない Implicit を許した登録設定として書く。AS が response_type を client ごとに許可していて、許していない client を `unauthorized_client` 以外のエラーで拒否するなら、RFC 6749 §4.2.2.1 に沿っていないので info に出す。AS 自体がその response_type に対応していないなら、`unsupported_response_type` が正しい応答なので info にしない。
 
 ## AS-11: 同意画面からRefererや外部リソース経由で漏らさない
 

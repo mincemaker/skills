@@ -74,6 +74,7 @@ state ではなく PKCE や nonce で CSRF を防ぐ設計なら、state_missing
 
 対象がstateを発行しないなら、次のように置き換え、置き換えたことを報告に書く。
 
+- state_missing: そのまま流し、受理することを記録する。守る値が無いことは RP-04 と RP-05 で判定する
 - state_tampered: 任意の値を付けて送る
 - state_other_session: 攻撃者のブラウザの認可レスポンスを、そのまま被害者のCookieで送る
 - state_cookie_attributes: セッションのCookieの属性を代わりに記録する
@@ -206,6 +207,8 @@ Implicit を使っても差し替えが止まるなら不適合にしない。Im
 |---|---|---|
 | code_injection_no_flow | 被害者のブラウザではフローを始めず、攻撃者が自分のフローで得たcodeとstateを、被害者のブラウザからcallbackに送る | 拒否。トークン要求を送らない |
 | session_rotation_after_callback | ログイン開始の前とcallbackの後で、セッションのCookieの値を比べる。ライブラリがセッションを扱わなければスキップし、ドキュメントで判定する | 値が変わる |
+
+RP-03 の攻撃は、攻撃者が被害者のブラウザにセッションの Cookie を植えられることを前提にする。植える手段が対象の外にあっても、それは攻撃者の能力の前提なので、ログインの後にセッションを更新しなければ不適合とする。
 
 被害者がフローを始めた状態での注入は、RP-05の code_injection で試す。PKCE だけで防ぐクライアントへの攻撃は、被害者のセッションに verifier が残っている、フローを始めた状態で成り立つ。
 
