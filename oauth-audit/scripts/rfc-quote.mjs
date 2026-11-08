@@ -1,5 +1,5 @@
-// RFC のテキスト版と、sources/zenn/ の章から、指定した書き出しで始まる 1 文を丸ごと出す（改行・改ページをまたいでよい）。
-//   node examples/rfc-quote.mjs sources/rfc9700.txt "<書き出し>" ["<書き出し>" …]
+// RFC のテキスト版と、取得した章から、指定した書き出しで始まる 1 文を丸ごと出す（改行・改ページをまたいでよい）。
+//   node <skill>/scripts/rfc-quote.mjs <原文のファイル> "<書き出し>" ["<書き出し>" …]
 import { readFileSync } from 'node:fs';
 
 const [file, ...starts] = process.argv.slice(2);

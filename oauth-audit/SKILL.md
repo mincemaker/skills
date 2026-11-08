@@ -1,5 +1,7 @@
 ---
 name: oauth-audit
+license: MIT
+compatibility: Requires Go 1.24+, Node.js 22+, and a writable audit workspace. Optional source downloads use zenn.dev and openid.net.
 description: OAuth / OIDCの実装を、oauth-redirect-attacksのチェックリストで監査する。IdPや認可サーバはAS-01〜AS-11で、SSOやソーシャルログインのライブラリなどクライアント側はRP-01〜RP-16で確かめる。対象の言語で監査テストを書いて実行し、判定の報告をまとめる。「このIdPを監査して」「このSSOライブラリのstate・PKCE・IDトークン検証を確かめて」「redirect_uriの照合を確かめて」「Pocket IDと同じ確認を<対象>でも」と頼まれたときに使う。稼働中のサービスへの攻撃には使わない。
 ---
 
@@ -13,8 +15,10 @@ description: OAuth / OIDCの実装を、oauth-redirect-attacksのチェックリ
 | `checklist-rp.md` | 対象がクライアントの役割を持つとき |
 | `report-template.md` | 報告を書くとき |
 | `tools/` | Goのツール。`fakeidp` はRPのテストで使う偽のIdP、`auditcheck` は報告とテストの機械的な検査 |
-| `sources/` | 判定の根拠にする原文。攻撃の手順と前提は `zenn/` の章に、info に引く規則は `rfc*.txt` にある |
+| `sources/` | 同梱の RFC と原文の README。後から取得する Zenn の章と OIDC Core は `<work>/sources/` に保存する |
 | `scripts/` | `fetch-sources.mjs` は Git に入れていない原文を取り直す。`rfc-quote.mjs` は RFC や章から1文をそのまま引く |
+
+`<skill>` はインストールされたこのスキル、`<work>` は監査用の書き込み可能な作業フォルダを指す。スキルのインストール先には書き込まない。チェックリストの `sources/zenn/` は `<work>/sources/zenn/` を指す。
 
 `tools/` のコマンドは `go -C <skill>/tools run ./<コマンド>` で動かし、`tools/` へは移動しない。sandboxでGoのビルドキャッシュに書けなければ、`GOCACHE` に一時ディレクトリを指定する。
 
@@ -26,11 +30,12 @@ description: OAuth / OIDCの実装を、oauth-redirect-attacksのチェックリ
 - OAuthの処理や検証を外部ライブラリに任せているなら、その版とSHAも記録する。forkか本家かも確かめる。ネットワークが使えなければ、Goのモジュールキャッシュのような手元の取得済みのソースを作業フォルダへ写して読み、写した元と、そこから分かるSHAを記録する。
 - 対象の役割を決める。認可エンドポイントとトークンエンドポイントを提供するならAS、別のIdPへログインしに行くならRP。上流のIdPを中継するブローカーやプロキシは両方。
 - 該当するチェックリストを全部読む。該当しない方は読まない。
-- `sources/zenn/` に章のテキストが無ければ、`node <skill>/scripts/fetch-sources.mjs` で取り直す。zenn.dev と openid.net に接続する。取り直せなければ、チェックリストの項目にある攻撃の説明と原文の README で進め、章を読めなかったことを報告に書く。
+- `<work>/sources/zenn/` に章のテキストが無ければ、`node <skill>/scripts/fetch-sources.mjs <work>/sources` で取り直す。zenn.dev と openid.net に接続する。取り直せなければ、チェックリストの項目にある攻撃の説明と原文の README で進め、章を読めなかったことを報告に書く。
 - 作業フォルダの構成は次の形にする。
 
 ```
 <work>/
+  sources/           後から取得する Zenn の章と OIDC Core
   <repo>/            対象のソース
   <oauth-lib>/       検証を任せているライブラリ。読む必要があるとき
   dist/
@@ -146,7 +151,7 @@ sandboxがローカルのポートでの待ち受けを止めたら（`bind: ope
 
 - RFC に反していることだけを理由に不適合にしない。info があっても、攻撃が成り立たなければ適合のまま。
 - 攻撃が成り立つなら、RFC で SHOULD でも、RFC に書かれていない経路でも不適合にする。
-- info の原文は `node <skill>/scripts/rfc-quote.mjs <skill>/sources/<rfc>.txt "<書き出し>"` で引き、言い換えずに載せる。
+- info の原文は `node <skill>/scripts/rfc-quote.mjs <skill>/sources/<rfc>.txt "<書き出し>"` で引き、言い換えずに載せる。後から取得した原文を引くときは、ファイルに `<work>/sources/oidc-core-1_0.txt` や `<work>/sources/zenn/<章>.txt` を指定する。
 - チェックリストの判定の区分に従う。テストもソースも見ていない範囲を適合にしない。
 - 攻撃の成立を実証したケースと、ソースから推測しただけのものを分けて書く。
 - ASだけを監査したら、RPの16項目は未判定とし、AS側の関連事実だけを書く。

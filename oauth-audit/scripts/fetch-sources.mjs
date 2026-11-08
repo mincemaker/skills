@@ -1,8 +1,22 @@
-// 転載できない原文を、照合の前に sources/ へテキストで取り直す。
+// 転載できない原文を、照合の前に作業フォルダへテキストで取り直す。
 // Zenn の本は著者の著作物、OpenID Connect Core 1.0 は利用許諾が仕様の策定と実装の目的に限られるので、
 // どちらも Git には入れない。
-//   node examples/fetch-sources.mjs
+//   node <skill>/scripts/fetch-sources.mjs <work>/sources
 import { mkdirSync, writeFileSync } from 'node:fs';
+import { resolve, join } from 'node:path';
+
+const [output, ...extra] = process.argv.slice(2);
+if (!output || extra.length) {
+  console.error('Usage: node fetch-sources.mjs <output-directory>');
+  process.exit(1);
+}
+const destination = resolve(output);
+
+const request = async (url) => {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`HTTP ${response.status}: ${url}`);
+  return response;
+};
 
 const decode = (s) => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;|&#x27;/g, "'")
   .replace(/&nbsp;|&#160;/g, ' ').replace(/&amp;/g, '&');
@@ -13,21 +27,21 @@ const htmlToText = (html) => decode(html
   .replace(/<[^>]+>/g, ''))
   .replace(/\n\s*\n+/g, '\n\n');
 
-// Zenn の本：各章を sources/zenn/NN-<slug>.txt に
+// Zenn の本：各章を出力先の zenn/NN-<slug>.txt に
 const user = 'hidebike712', slug = 'oauth-attacks-and-bcp';
-const zenn = new URL('../sources/zenn/', import.meta.url);
+const zenn = join(destination, 'zenn');
 // ファイル名に token が入ると、秘密情報を守るフックが読み込みを止めるので短く言い換える
 const rename = (s) => s.replace(/access-token/, 'at').replace(/id-token/, 'idt');
-const { book } = await (await fetch(`https://zenn.dev/api/books/${slug}?username=${user}`)).json();
+const { book } = await (await request(`https://zenn.dev/api/books/${slug}?username=${user}`)).json();
 mkdirSync(zenn, { recursive: true });
 for (const [i, c] of book.chapters.entries()) {
-  const { chapter } = await (await fetch(`https://zenn.dev/api/chapters/${c.id}`)).json();
+  const { chapter } = await (await request(`https://zenn.dev/api/chapters/${c.id}`)).json();
   const name = `${String(i + 1).padStart(2, '0')}-${rename(c.slug)}.txt`;
-  writeFileSync(new URL(name, zenn), `# ${c.title}\nhttps://zenn.dev/${user}/books/${slug}/viewer/${c.slug}\n\n${htmlToText(chapter.body_html)}`);
+  writeFileSync(join(zenn, name), `# ${c.title}\nhttps://zenn.dev/${user}/books/${slug}/viewer/${c.slug}\n\n${htmlToText(chapter.body_html)}`);
   console.log(`zenn/${name}`);
 }
 
 // OpenID Connect Core 1.0 incorporating errata set 2
 const oidcUrl = 'https://openid.net/specs/openid-connect-core-1_0.html';
-writeFileSync(new URL('../sources/oidc-core-1_0.txt', import.meta.url), `${oidcUrl}\n\n${htmlToText(await (await fetch(oidcUrl)).text())}`);
+writeFileSync(join(destination, 'oidc-core-1_0.txt'), `${oidcUrl}\n\n${htmlToText(await (await request(oidcUrl)).text())}`);
 console.log('oidc-core-1_0.txt');
