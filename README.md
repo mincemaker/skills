@@ -1,30 +1,32 @@
 # skills
 
-コーディングエージェント向けのスキル集。各ディレクトリの `SKILL.md` に、エージェントが使う手順を定義している。
+English | [日本語](README_ja.md)
 
-## スキル一覧
+A collection of skills for coding agents. Each directory contains a `SKILL.md` file that defines the instructions agents follow.
 
-| スキル | 用途 |
+## Skills
+
+| Skill | Purpose |
 |---|---|
-| [oauth-audit](oauth-audit/README.md) | OAuth / OIDC 実装の監査。認可サーバとクライアントのチェックリストに沿って、監査テストと報告を作る |
+| [oauth-audit](oauth-audit/README.md) | Audit OAuth / OIDC implementations. Create audit tests and reports using checklists for authorization servers and clients. Skill instructions, checklists, and the report template are in Japanese. |
 
-必要な実行環境、利用上の注意、付属ツールの使い方は、各スキルの README を参照。
+See each skill's README for required runtimes, usage notes, and instructions for using included tools.
 
-## 導入
+## Installation
 
-導入する前に、各スキルの README にある利用上の注意を読む。セキュリティの監査を行うスキルは、自分が管理するシステムか、管理者から許可を得たシステムにだけ使う。
+Before installing, read the usage notes in each skill's README. Use security audit skills only on systems you manage or have permission from the administrator to audit.
 
-必要なスキルを個別に選んで導入する。以下の `<skill-name>` は、一覧にあるスキル名に置き換える。
+Install the skills you need individually. Replace `<skill-name>` below with a name from the list above.
 
 ### APM
 
-[APM](https://github.com/microsoft/apm) でユーザー全体に入れる。
+Install for your user account with [APM](https://github.com/microsoft/apm):
 
 ```sh
 apm install -g mincemaker/skills/<skill-name>
 ```
 
-プロジェクト単位なら、`apm.yml` に対象エージェントと依存を書く。例えば `oauth-audit` を Claude Code に導入する場合：
+For a project, declare the target agent and dependency in `apm.yml`. For example, to install `oauth-audit` for Claude Code:
 
 ```yaml
 name: my-project
@@ -42,7 +44,7 @@ apm install
 
 ### agent-skills-nix
 
-[Kyure-A/agent-skills-nix](https://github.com/Kyure-A/agent-skills-nix) で Home Manager から管理する場合、利用者の flake に次の inputs を追加する。このリポジトリ自体に flake は不要。
+To manage skills through Home Manager with [Kyure-A/agent-skills-nix](https://github.com/Kyure-A/agent-skills-nix), add these inputs to your flake. This repository does not need its own flake.
 
 ```nix
 inputs = {
@@ -54,7 +56,7 @@ inputs = {
 };
 ```
 
-既存の `outputs` を `outputs = inputs@{ ... }: ...;` の形にし、Home Manager の構成に module と inputs を渡す。
+Capture the inputs with `outputs = inputs@{ ... }: ...;`, then pass the module and inputs to your Home Manager configuration:
 
 ```nix
 home-manager.lib.homeManagerConfiguration {
@@ -67,7 +69,7 @@ home-manager.lib.homeManagerConfiguration {
 }
 ```
 
-`home.nix` でソース、スキル、配置先を選ぶ。例えば `oauth-audit` を Claude Code に導入する場合：
+In `home.nix`, choose the source, skills, and installation target. For example, to install `oauth-audit` for Claude Code:
 
 ```nix
 { ... }:
@@ -77,18 +79,18 @@ home-manager.lib.homeManagerConfiguration {
     sources.mincemaker.input = "mincemaker-skills";
     skills.enable = [ "oauth-audit" ];
     targets.claude.enable = true;
-    # ~/.agents/skills に配置する場合は、代わりに次を指定する。
+    # To install into ~/.agents/skills, use this instead:
     # targets.agents.enable = true;
   };
 }
 ```
 
-スキルはリポジトリ直下にあるため、`subdir` は指定しない。`skills.enable` に必要なスキル名を列挙する。revision は利用者の `flake.lock` で固定する。既存の skills ディレクトリがある場合は、適用前に upstream の [destination ownership](https://github.com/Kyure-A/agent-skills-nix/blob/HEAD/docs/installation.md#destination-ownership) を確認する。
+Skills are at the repository root, so do not set `subdir`. List the skills you need in `skills.enable`. Your `flake.lock` pins the source revision. If you already have a skills directory, read the upstream [destination ownership guide](https://github.com/Kyure-A/agent-skills-nix/blob/HEAD/docs/installation.md#destination-ownership) before applying the configuration.
 
-スキルが必要とする言語ランタイムやツールは、別途用意する。要件は各スキルの README を参照。
+Provide any language runtimes or tools required by the skills separately. See each skill's README for its requirements.
 
-## ライセンス
+## License
 
-MIT。全文は [LICENSE](LICENSE)。
+MIT. See [LICENSE](LICENSE) for the full text.
 
-`oauth-audit/sources/` の RFC のテキストは、このライセンスの対象外。IETF Trust の著作物で、[IETF Trust Legal Provisions](https://trustee.ietf.org/license-info) の条件に従う。
+The RFC texts in `oauth-audit/sources/` are not covered by this license. They are copyright of the IETF Trust and the persons identified as the document authors, and are reproduced under the [IETF Trust Legal Provisions Relating to IETF Documents](https://trustee.ietf.org/license-info).

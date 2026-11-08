@@ -1,122 +1,124 @@
 # oauth-audit
 
-OAuth / OIDC の実装を監査するエージェント用スキル。認可サーバは AS-01〜AS-11、クライアントは RP-01〜RP-16 のチェックリストで確かめ、対象の言語で監査テストと報告を作る。
+English | [日本語](README_ja.md)
 
-[oauth-redirect-attacks](https://github.com/mincemaker/oauth-redirect-attacks) のチェックリストを使う。具体的な監査手順は [SKILL.md](SKILL.md) を参照。
+A skill for agents auditing OAuth / OIDC implementations. Audit authorization servers using checklist items AS-01 through AS-11, and clients using RP-01 through RP-16. Write audit tests in the target's programming language and produce audit reports.
 
-## 使う前に
+The skill uses the checklist from [oauth-redirect-attacks](https://github.com/mincemaker/oauth-redirect-attacks). See [SKILL.md](SKILL.md) for the specific audit procedures. The skill instructions, checklists, and report template are in Japanese.
 
-このスキルと道具は、自分が管理するシステムか、管理者から監査の許可を得たシステムを、防御のために確かめるためのものである。
+## Before using
 
-- 監査は、対象のソースを手元に取得し、手元で動かすテストの中で行う。例外は AS-11 の同意画面の確認で、稼働中の同意画面に curl とブラウザで要求を送る。これは、利用者が対象の管理者であるか管理者の許可を得ていて、対象の URL を利用者から受け取った場合だけ行う。それ以外に、稼働中のサービスや本物の IdP へ確認のための要求は送らない。
-- 他人が管理するシステムに、管理者の許可なく確認のための要求を送らない。許可の範囲を超えた要求も同じ。不正アクセス行為の禁止等に関する法律 (不正アクセス禁止法) では、照合の不備を突いて入る行為のほかに、次の行為も罪に当たりうる。他人の認可コード、アクセストークン、ID トークン、パスワードなどの識別符号を使ってアクセスすること (2条4項1号)、不正アクセスのためにそれらを取得すること (4条)、保管すること (6条)。監査の途中で他人の識別符号を目にしても、使わず、報告や記録に残さない。
-- 総当たりの試験のように、相手のサービスの動作を妨げうる要求を、稼働中のサービスに送らない。刑法の電子計算機損壊等業務妨害罪に当たりうる。
-- 監査テストと偽の IdP (`tools/fakeidp`) は、利用者が自分の手元で、自分の意図どおりに実行するためのもの。他人の電子計算機で、その人の意図に反する動作をさせるためのプログラムではない。テストや道具を、そうした動作をするように作り変えたり、他人に実行させる目的で配ったりしない。刑法の不正指令電磁的記録に関する罪 (いわゆるウイルス作成罪) に当たりうる。
-- 偽の IdP は既定で 127.0.0.1 だけで待ち受ける。`-addr` で外部から届くアドレスにしない。`-issuer` に実在のプロバイダの URL を指定したまま、第三者が使える場所で動かさない。本物の IdP と取り違えた人に識別符号を入力させることになり、不正アクセス禁止法 7条の不正入力要求、いわゆるフィッシングに当たりうる。
-- 実環境の確認や報告で、実在の利用者の個人情報、トークン、それらを含む URL やログを記録しない。必要な場合は値を伏せて書く。個人情報保護法の規律を受けうるほか、他人の通信の内容を取得すると通信の秘密の侵害に当たりうる。
-- 監査で見つけた不備は、直るまで公開しない。対象の開発元に知らせるときは、開発元が案内する脆弱性の報告の窓口を使う。日本では、IPA と JPCERT/CC が受け付ける脆弱性関連情報の届出の制度もある。公開の issue、PR、コメントに、直っていない不備の詳細を書かない。スキルは、監査テストを手元に取得した対象のソースへ symlink かコピーで置くが、対象のリモートのリポジトリには何も書き込まない。テストを置いた作業ツリーから commit や push をしない。
-- 日本の外のシステムや利用者に関わるときは、その国の法律にも従う。
+This skill and its tools are intended for defensive checks of systems you manage or systems whose administrators have authorized you to audit.
 
-ここに書いたのは利用の目安で、法的な助言ではない。どこまでが許されるかは、対象との契約、許可の内容、個々の状況で変わる。迷ったら、監査を始める前に対象の管理者と範囲を文書で取り決め、必要なら専門家に相談する。
+- Conduct the audit using tests run locally against source code obtained locally. The exception is AS-11, which checks the consent screen using curl and a browser against the live system. Do this only if the user is the system's administrator or has the administrator's permission, and has provided the target URL. Do not send verification requests to any other live service or real IdP.
+- Do not send verification requests to systems managed by others without the administrator's permission. The same applies to requests that exceed the scope of that permission. Under Japan's Act on Prohibition of Unauthorized Computer Access, the following acts may also be criminal offenses, in addition to gaining access by exploiting flaws in authentication checks: accessing a system using another person's authorization code, access token, ID token, password, or other authentication credentials (Article 2, Paragraph 4, Item 1); obtaining them for the purpose of unauthorized access (Article 4); and storing them for that purpose (Article 6). If you encounter another person's credentials during an audit, do not use them or include them in reports or records.
+- Do not send requests to live services that could interfere with their operation, such as brute-force tests. Such acts may constitute the crime of obstruction of business by damaging a computer under Japan's Penal Code.
+- Audit tests and the fake IdP (`tools/fakeidp`) are intended to be run by users locally, as they choose. They are not programs intended to make another person's computer perform actions against that person's will. Do not modify the tests or tools to make them do so, or distribute them for the purpose of having others run them. Such acts may constitute an offense involving electromagnetic records of unauthorized commands under Japan's Penal Code, including the creation of computer viruses.
+- By default, the fake IdP listens only on 127.0.0.1. Do not use `-addr` to bind it to an address reachable from outside. Do not run it somewhere accessible to third parties while `-issuer` is set to the URL of a real provider. This could cause someone who mistakes it for the real IdP to enter their credentials, which may constitute an unlawful request for input under Article 7 of Japan's Act on Prohibition of Unauthorized Computer Access, commonly known as phishing.
+- When performing checks in a live environment or writing reports, do not record real users' personal information, tokens, or URLs or logs containing them. Redact values when necessary. In addition to potentially being subject to Japan's Act on the Protection of Personal Information, obtaining the contents of another person's communications may violate the secrecy of communications.
+- Do not publicly disclose flaws found during an audit until they have been fixed. When notifying the target's developers, use the vulnerability reporting channel they provide. In Japan, there is also a vulnerability information reporting system run by IPA and JPCERT/CC. Do not post details of unfixed flaws in public issues, pull requests, or comments. The skill places audit tests in a locally obtained copy of the target's source code using a symlink or by copying them; it does not write anything to the target's remote repository. Do not commit or push from the working tree where the tests have been placed.
+- When dealing with systems or users outside Japan, also comply with the laws of the relevant country.
 
-このスキルと道具は、現状のまま提供する。使った結果について、作者は法令で許される範囲で責任を負わない。監査の報告は、確かめた範囲で項目を満たすかを示すもので、対象の安全を保証しない。
+The guidance here is intended as a general reference and is not legal advice. What is permitted depends on the contract with the target, the scope of authorization, and the circumstances. If in doubt, agree on the scope in writing with the target's administrator before beginning the audit, and consult a professional if necessary.
 
-## 導入
+This skill and its tools are provided "as is." The author assumes no liability for the results of their use, to the extent permitted by law. An audit report indicates whether items were met within the scope checked; it does not guarantee the target's security.
 
-APM でユーザー全体に入れる。
+## Installation
+
+Install for your user account with APM.
 
 ```sh
 apm install -g mincemaker/skills/oauth-audit
 ```
 
-プロジェクト単位の APM 設定と `Kyure-A/agent-skills-nix` の Home Manager 設定は、[導入案内](https://github.com/mincemaker/skills#導入) を参照。Nix ではこのリポジトリを `flake = false` の input として登録し、`oauth-audit` を選択する。専用の flake やビルド手順は不要。
+For project-level APM settings and the Home Manager configuration for `Kyure-A/agent-skills-nix`, see the [installation guide](https://github.com/mincemaker/skills#installation). With Nix, add this repository as a `flake = false` input and select `oauth-audit`. No dedicated flake or build steps are needed.
 
-## 必要な環境
+## Requirements
 
-- このスキルを読み込めるコーディングエージェント
-- Go 1.24 以上
-- Node.js 22 以上
-- 監査対象の言語とテスト基盤
-- 書き込み可能な作業フォルダ
+- A coding agent that can load this skill
+- Go 1.24 or later
+- Node.js 22 or later
+- The language and test framework used by the audit target
+- A writable working directory
 
-原文を取得するときは zenn.dev と openid.net に接続する。Zenn からは、文書化されていない非公式の API で章を取得する。負荷をかけないよう章の間に間隔を空けて取るので、繰り返し取り直さず、取得したものを使い回す。取得できない場合の進め方は SKILL.md に記載している。対象の取得や依存解決に必要な通信は、対象の開発環境による。
+Retrieving source material requires connections to zenn.dev and openid.net. From Zenn, chapters are retrieved using an undocumented, unofficial API. To avoid overloading the service, retrieval is spaced out between chapters; do not repeatedly fetch them. Reuse the copies you have retrieved. See SKILL.md for what to do if retrieval fails. Any network access required to obtain the target or resolve dependencies depends on the target's development environment.
 
-Go と Node.js は、APM やスキルの配置だけでは導入されない。Home Manager では、例えば `home.packages = [ pkgs.go pkgs.nodejs ];` で用意する。
+Go and Node.js are not installed simply by installing APM or placing the skill. With Home Manager, you can provide them, for example, with `home.packages = [ pkgs.go pkgs.nodejs ];`.
 
-## 監査の流れ
+## Audit workflow
 
-1. 対象のコミットを固定し、認可サーバ (AS) とクライアント (RP) のどちらの役割を持つかを決める。
-2. 対象のテスト基盤で監査テストを書く。RP の監査では、手元で動く偽の IdP に外向きの通信をすべて向ける。
-3. テストを流し、項目ごとに判定する。
-4. 報告を書き、道具で機械的に検査する。
+1. Pin the target commit and determine whether it acts as an authorization server (AS), a client (RP), or both.
+2. Write audit tests using the target's test framework. For an RP audit, direct all outbound traffic to a fake IdP running locally.
+3. Run the tests and assess each item.
+4. Write the report and validate it with the tool.
 
-判定は、その項目が守りたいものを破る攻撃が、対象で実際に成り立つかで決める。報告では次の4つを分けて出す。
+Determine the result based on whether an attack that defeats the protection intended by the item can actually succeed against the target. The report should distinguish these four categories:
 
-| 区分 | 中身 |
+| Category | Contents |
 |---|---|
-| 脆弱性 | 攻撃が成り立つもの。テストで再現するか、決め手の1歩を示す |
-| info | 攻撃は示せないが、RFC にはっきり反しているもの。RFC の原文を引く |
-| 残るリスク | 対象の外の条件、例えば登録の仕方しだいで攻撃が成り立つもの |
-| 所見 | そのどれでもないが、読み手に伝えておくもの |
+| Vulnerability | An attack that can succeed. Reproduce it with a test or show the decisive step |
+| info | Something that cannot be shown to enable an attack but clearly violates an RFC. Quote the original RFC text |
+| Residual risk | An attack that can succeed depending on conditions outside the target, such as how it is registered |
+| Observation | Something that does not fit any of the above but should be brought to the reader's attention |
 
-チェックリストに無い種類の不備は見落とすことがある。報告の「確認していない範囲」に、確かめていないことを書く。
+Issues outside the checklist may be missed. State anything that was not checked in the report's section for unchecked scope.
 
-## ファイルと作業場所
+## Files and working directories
 
-`<skill>` はこのスキルのインストール先、`<work>` は監査用の作業フォルダを表す。コマンドでは実際のパスに置き換える。
+`<skill>` represents the installation directory for this skill, and `<work>` represents the working directory for the audit. Replace these with the actual paths in commands.
 
-| 場所 | 内容 |
+| Location | Contents |
 |---|---|
-| `<skill>/SKILL.md` | エージェントが読む監査手順 |
-| `<skill>/checklist-*.md` | 役割ごとのチェックリスト |
-| `<skill>/report-template.md` | 報告の雛形 |
-| `<skill>/sources/` | 同梱 RFC と出典の説明 |
-| `<skill>/tools/` | Go ツールのソース |
-| `<work>/sources/` | 後から取得する Zenn の章と OIDC Core |
-| `<work>/dist/` | 監査報告とテストの配布物 |
+| `<skill>/SKILL.md` | Audit procedures for the agent |
+| `<skill>/checklist-*.md` | Checklists for each role |
+| `<skill>/report-template.md` | Report template |
+| `<skill>/sources/` | Bundled RFCs and source notes |
+| `<skill>/tools/` | Go tool source code |
+| `<work>/sources/` | Zenn chapters and OIDC Core retrieved later |
+| `<work>/dist/` | Audit reports and test deliverables |
 
-インストール先は読み取り専用で構わない。取得する原文、監査テスト、成果物は作業フォルダへ保存する。
+The installation directory may be read-only. Save retrieved source material, audit tests, and deliverables in the working directory.
 
-## 原文の取得と引用
+## Retrieving and quoting source material
 
-`sources/` には RFC 6749、7636、8252、9207、9700、10017 のテキストを置いている。[oauth-redirect-attacks](https://github.com/mincemaker/oauth-redirect-attacks) の `b001ca6` から写したもの。
+The `sources/` directory contains texts of RFCs 6749, 7636, 8252, 9207, 9700, and 10017. They are copied from commit `b001ca6` of [oauth-redirect-attacks](https://github.com/mincemaker/oauth-redirect-attacks).
 
-Hideki Ikeda 氏の [攻撃手法から学ぶ OAuth セキュリティベストプラクティス](https://zenn.dev/hidebike712/books/oauth-attacks-and-bcp) と OpenID Connect Core 1.0 は、転載できないのでこのリポジトリに入れていない。使う人が次のコマンドで手元に取得する。
+Hideki Ikeda's [攻撃手法から学ぶ OAuth セキュリティベストプラクティス](https://zenn.dev/hidebike712/books/oauth-attacks-and-bcp) and OpenID Connect Core 1.0 are not included in this repository because of restrictions on reproduction. Users should retrieve them locally with the following command.
 
-`<work>/sources/zenn/` はスクリプト専用。再取得では、すべての取得後、書き出す前に中身をすべて削除するため、自分のファイルを置かない。
+`<work>/sources/zenn/` is reserved for the script. On a refetch, all its contents are deleted after all source material has been fetched and before anything is written. Do not put your own files there.
 
 ```sh
 node <skill>/scripts/fetch-sources.mjs <work>/sources
-node <skill>/scripts/rfc-quote.mjs <skill>/sources/rfc9700.txt "<書き出し>"
-node <skill>/scripts/rfc-quote.mjs <work>/sources/oidc-core-1_0.txt "<書き出し>"
+node <skill>/scripts/rfc-quote.mjs <skill>/sources/rfc9700.txt "<sentence-start>"
+node <skill>/scripts/rfc-quote.mjs <work>/sources/oidc-core-1_0.txt "<sentence-start>"
 ```
 
-Zenn の章を引用するときも、`<work>/sources/zenn/<章>.txt` をファイルに指定する。取得する原文はこのリポジトリの MIT ライセンスの対象ではない。出典は [sources/README.md](sources/README.md) を参照。
+For quotations, replace `<sentence-start>` with the beginning of the sentence to retrieve. When quoting a Zenn chapter, specify `<work>/sources/zenn/<chapter>.txt` as the file. Retrieved source material is not covered by this repository's MIT license. See [sources/README.md](sources/README.md) for source notes in Japanese.
 
-取得した原文の扱いには、次の点に気をつける。
+Keep the following points in mind when handling retrieved source material:
 
-- 取得したファイルは監査のために手元で読むためのもの。共有や再配布をしない。Zenn の利用規約は、権利者の許可のない転載と二次配布を禁じている (第6条第3項)。
-- 報告に引くのは、判定の根拠に必要な部分だけにする。報告の本文が主で、引用が従になるようにし、引用部分を区別して、著者名、書名か仕様名、章、URL、取得日を書く。著作権法の引用 (32条) と出所の明示 (48条) の要件に沿うため。
-- 業務での取得は、私的使用のための複製 (著作権法30条) に当たらないことがある。OpenID Connect Core 1.0 の利用許諾は、仕様の策定と実装の目的に限られる。組織で使うときは、それぞれの権利者の許諾の範囲を確かめる。
+- Retrieved files are for local reading as part of the audit. Do not share or redistribute them. Zenn's terms of use prohibit reproduction and redistribution without the rights holder's permission (Article 6, Paragraph 3).
+- Quote only the portions necessary to support the assessment in the report. Keep the report text primary and the quotation secondary, distinguish quoted passages, and include the author's name, book or specification title, chapter, URL, and retrieval date. This is to meet the requirements for quotations under Japan's Copyright Act (Article 32) and identifying sources (Article 48).
+- Retrieval for business purposes may not qualify as reproduction for private use under Article 30 of Japan's Copyright Act. The license for OpenID Connect Core 1.0 is limited to the purposes of developing specifications and implementing them. When using these materials in an organization, verify the scope of permission from each rights holder.
 
-## Go ツール
+## Go tools
 
-スキルの `tools/` に移動せず、作業フォルダから呼び出す。
+Run the tools from the working directory; do not change into the skill's `tools/` directory.
 
 ```sh
 go -C <skill>/tools run ./fakeidp -h
 go -C <skill>/tools run ./auditcheck -h
 ```
 
-Go のビルドキャッシュには書き込みが必要。sandbox で既定のキャッシュが使えない場合は、`GOCACHE` に書き込み可能な一時ディレクトリの絶対パスを指定する。監査対象への使い方と判定基準は [SKILL.md](SKILL.md) に従う。
+The Go build cache must be writable. If the default cache cannot be used in a sandbox, set `GOCACHE` to the absolute path of a writable temporary directory. Follow [SKILL.md](SKILL.md) for how to use the tools with the audit target and for assessment criteria.
 
-## 開発時の検証
+## Development-time verification
 
-リポジトリのルートから実行する。
+Run from the repository root.
 
 ```sh
 node --test oauth-audit/scripts/*.test.mjs tests/*.test.mjs
 go -C oauth-audit/tools test ./...
 ```
 
-原文取得のテストはネットワークを模擬し、外部サービスには接続しない。
+Tests for retrieving source material simulate the network and do not connect to external services.
